@@ -1,4 +1,9 @@
 # This loop assigns order number for each node (to distribute snapshots afterwards)
+
+CASSANDRA_2_HOME=/opt/cassandra
+CASSANDRA_3_HOME=/opt/apache-cassandra-3.4
+CASSANDRA_HOME=$CASSANDRA_3_HOME
+
 while true; do
     curl -Lsf "${ETCD_URL}/v2/keys/cassandra/${CLUSTER_NAME}/recoveryLock?prevExist=false" \
         -XPUT -d value=${LISTEN_ADDRESS} -d ttl=${TTL} > /dev/null
@@ -49,10 +54,12 @@ if [ $my_order -le $snapshot_count ]; then
 
 	# node_folder=`ls $S3_DIR | sed -n ${my_order}p`
 	node_folder="$S3_DIR/$node_folder"
+	node_folder=${node_folder:0:-1} #remove last slash
 
-	for cql_file in `ls $node_folder*.cql`;
+
+	for cql_file in `ls $node_folder/*.cql`;
 	do
-	    cout=`/opt/apache-cassandra-3.4/bin/cqlsh.py $LISTEN_ADDRESS -f $cql_file 2>&1`
+	    cout=`$CASSANDRA_HOME/bin/cqlsh $LISTEN_ADDRESS -f $cql_file 2>&1`
 	    exists=`echo $cout | grep already | wc -l`
 	    # cout=`cqlsh $LISTEN_ADDRESS -f $SCHEMA_DEFINITION`
 	    result_status=$?
@@ -65,24 +72,52 @@ if [ $my_order -le $snapshot_count ]; then
 	        fi
 	        echo "Sleep 10s..."
 	        sleep 10s
-	        cout=`/opt/apache-cassandra-3.4/bin/cqlsh.py $LISTEN_ADDRESS -f $cql_file 2>&1`
+	        cout=`$CASSANDRA_HOME/bin/cqlsh $LISTEN_ADDRESS -f $cql_file 2>&1`
 	        result_status=$?
 	        echo $result_status:$cout
 	    done
 	done
-	for snapshot_dir in `ls -d $node_folder*/*/`;
+	for keyspace_dir in `ls -d $node_folder/*/`;
 	do
-	    cout=`/opt/cassandra/bin/sstableloader -d ${LISTEN_ADDRESS} $snapshot_dir 2>&1`
-	    result_status=$?
-	    echo $result_status:$cout
-	    while [ $result_status -ne 0 ]; do
-	        echo "Sleep 10s..."
-	        sleep 10s
-	        cout=`/opt/cassandra/bin/sstableloader -d ${LISTEN_ADDRESS} $snapshot_dir 2>&1`
-	        result_status=$?
-	        echo $result_status:$cout
-	    done
+		keyspace_name=`echo $keyspace_dir | grep -o "[^\/]*\/$"`
+		keyspace_name=${keyspace_name:0:-1} # remove last slash
+		for snapshot_dir in `ls -d $node_folder/$keyspace_name/*/`;
+		do
+			snapshot_name=`echo $snapshot_dir | grep -o "[^\/]*\/$"`
+			snapshot_name=${snapshot_name:0:-1}
+			table_name=`echo $snapshot_name | grep -o "[^-]*-"`
+			table_name=${table_name:0:-1}
+			cass_table=`ls -d "/var/cassandra/data/$keyspace_name/$table_name"* | grep -o "[^\/]*$"`
+			echo "mkdir -p /var/cassandra/data/$keyspace_name/$cass_table/snapshots"
+			mkdir -p /var/cassandra/data/$keyspace_name/$cass_table/snapshots
+			echo "cp $snapshot_dir /var/cassandra/data/$keyspace_name/$cass_table/snapshots -R"
+			cp $snapshot_dir /var/cassandra/data/$keyspace_name/$cass_table/snapshots -R
+			echo "sstableupgrade $keyspace_name $table_name $snapshot_name"
+			sstableupgrade $keyspace_name $table_name $snapshot_name
+			echo "mkdir -p $node_folder/upgrade/$keyspace_name/$table_name"
+			mkdir -p $node_folder/upgrade/$keyspace_name/$table_name
+			echo "cp /var/cassandra/data/$keyspace_name/$cass_table/snapshots/$snapshot_name/* $node_folder/upgrade/$keyspace_name/$table_name -R"
+			cp /var/cassandra/data/$keyspace_name/$cass_table/snapshots/$snapshot_name/* $node_folder/upgrade/$keyspace_name/$table_name -R
+			echo "sstableloader -d $LISTEN_ADDRESS $node_folder/upgrade/$keyspace_name/$table_name"
+			sstableloader -d $LISTEN_ADDRESS $node_folder/upgrade/$keyspace_name/$table_name
+			echo "---"
+		done
 	done
 
-	/opt/cassandra/bin/nodetool -h $LISTEN_ADDRESS repair
+	# Old sstable load.
+	# for snapshot_dir in `ls -d $node_folder/*/*/`;
+	# do
+	#     cout=`$CASSANDRA_HOME/bin/sstableloader -d ${LISTEN_ADDRESS} $snapshot_dir 2>&1`
+	#     result_status=$?
+	#     echo $result_status:$cout
+	#     while [ $result_status -ne 0 ]; do
+	#         echo "Sleep 10s..."
+	#         sleep 10s
+	#         cout=`$CASSANDRA_HOME/bin/sstableloader -d ${LISTEN_ADDRESS} $snapshot_dir 2>&1`
+	#         result_status=$?
+	#         echo $result_status:$cout
+	#     done
+	# done
+
+	`$CASSANDRA_HOME/bin/nodetool -h $LISTEN_ADDRESS repair`
 fi
