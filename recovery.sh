@@ -38,21 +38,21 @@ mkdir -p $S3_DIR
 snapshot_count=`aws s3 ls "s3://cassandra-release-backup/cassandra-snapshot/$recovery_snapshot/" | wc -l`
 
 if [ $my_order -le $snapshot_count ]; then
-    
+
     #list available snaphsots | print only folder name | take my_order 'th snapshot
     #result will be smth like '172.31.123.321/'
 	node_folder=`aws s3 ls "s3://cassandra-release-backup/cassandra-snapshot/$recovery_snapshot/" | awk '{print $2;}' | sed -n ${my_order}p`
 	aws s3 cp "s3://cassandra-release-backup/cassandra-snapshot/$recovery_snapshot/$node_folder" $S3_DIR/$node_folder --recursive
 
     # my_order=$(($my_order-$snapshot_count))
-	
+
 
 	# node_folder=`ls $S3_DIR | sed -n ${my_order}p`
 	node_folder="$S3_DIR/$node_folder"
 
 	for cql_file in `ls $node_folder*.cql`;
 	do
-	    cout=`/opt/apache-cassandra-3.3/bin/cqlsh.py $LISTEN_ADDRESS -f $cql_file 2>&1`
+	    cout=`/opt/apache-cassandra-3.4/bin/cqlsh.py $LISTEN_ADDRESS -f $cql_file 2>&1`
 	    exists=`echo $cout | grep already | wc -l`
 	    # cout=`cqlsh $LISTEN_ADDRESS -f $SCHEMA_DEFINITION`
 	    result_status=$?
@@ -65,7 +65,7 @@ if [ $my_order -le $snapshot_count ]; then
 	        fi
 	        echo "Sleep 10s..."
 	        sleep 10s
-	        cout=`/opt/apache-cassandra-3.3/bin/cqlsh.py $LISTEN_ADDRESS -f $cql_file 2>&1`
+	        cout=`/opt/apache-cassandra-3.4/bin/cqlsh.py $LISTEN_ADDRESS -f $cql_file 2>&1`
 	        result_status=$?
 	        echo $result_status:$cout
 	    done

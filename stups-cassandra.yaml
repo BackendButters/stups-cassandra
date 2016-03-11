@@ -9,7 +9,7 @@ SenzaInfo:
         Default: "4"
     - ImageVersion:
         Description: "Which Image version to use (e.g. 2.1.8-p0)"
-        Default: "1.0-SNAPSHOT"
+        Default: "1.1-SNAPSHOT"
     - OpsCenterIp:
         Description: "Register to Opscenter using Ip address"
         Default: ""
@@ -45,7 +45,7 @@ SenzaComponents:
 
   - CassandraCluster:
       Type: Senza::TaupageAutoScalingGroup
-      InstanceType: "i2.2xlarge" # Has 2 800GB SSDs
+      InstanceType: "r3.4xlarge"
       SecurityGroups:
         - Fn::GetAtt:
           - StupsCassandraSg
@@ -86,7 +86,7 @@ SenzaComponents:
             erase_on_boot: false
           /var/cassandra:
             partition: /dev/md/cassandra
-            filesystem: ext4
+            filesystem: xfs
             erase_on_boot: true
 
         environment:

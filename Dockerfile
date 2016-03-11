@@ -1,4 +1,4 @@
-FROM zalando/openjdk:8u45-b14-3
+FROM zalando/openjdk:8u66-b17-1-3
 
 MAINTAINER Zalando <team-mop@zalando.de>
 
@@ -10,14 +10,14 @@ ENV DEBIAN_FRONTEND=noninteractive
 RUN echo "deb http://debian.datastax.com/community stable main" | tee -a /etc/apt/sources.list.d/datastax.community.list
 RUN curl -sL https://debian.datastax.com/debian/repo_key | apt-key add -
 RUN apt-get -y update && apt-get -y -o Dpkg::Options::='--force-confold' --fix-missing dist-upgrade
-RUN apt-get -y install curl python wget jq datastax-agent sysstat python-pip supervisor && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+RUN apt-get -y install curl python wget jq datastax-agent sysstat python-pip supervisor jemalloc && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Needed for transferring snapshots
 RUN pip install awscli
 
-ENV CASSIE_VERSION=3.3
+ENV CASSIE_VERSION=3.4
 #ADD http://archive.apache.org/dist/cassandra/${CASSIE_VERSION}/apache-cassandra-${CASSIE_VERSION}-bin.tar.gz /tmp/
-ADD http://ftp.fau.de/apache/cassandra/3.3/apache-cassandra-3.3-bin.tar.gz /tmp/
+ADD http://ftp.fau.de/apache/cassandra/3.4/apache-cassandra-3.4-bin.tar.gz /tmp/
 #RUN echo "cb77a8e3792a7e8551af6602ac5f11df /tmp/apache-cassandra-${CASSIE_VERSION}-bin.tar.gz" > /tmp/apache-cassandra-${CASSIE_VERSION}-bin.tar.gz.md5
 #RUN md5sum --check /tmp/apache-cassandra-${CASSIE_VERSION}-bin.tar.gz.md5
 
@@ -63,5 +63,17 @@ RUN touch /var/log/snapshot_cron.log && chmod 0777 /var/log/snapshot_cron.log
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 RUN mkdir -p /opt/recovery
+
+# disable swap
+RUN swapoff -a
+RUN sed -i ‘s/^\(.*swap\)/#\1/' /etc/fstab
+RUN echo "vm.swappiness = 1" > /etc/sysctl.d/swappiness.conf
+RUN sysctl -p /etc/sysctl.d/swappiness.conf
+
+RUN echo 1 > /sys/block/sda/queue/nomerges
+RUN echo 8 > /sys/block/sda/queue/read_ahead_kb
+RUN echo deadline > /sys/block/sda/queue/scheduler
+
+RUN echo tsc > /sys/devices/system/clocksource/clocksource0/current_clocksource
 
 CMD ["/usr/bin/supervisord"]
