@@ -93,13 +93,13 @@ if [ $my_order -le $snapshot_count ]; then
 			echo "cp $snapshot_dir /var/cassandra/data/$keyspace_name/$cass_table/snapshots -R"
 			cp $snapshot_dir /var/cassandra/data/$keyspace_name/$cass_table/snapshots -R
 			echo "sstableupgrade $keyspace_name $table_name $snapshot_name"
-			sstableupgrade $keyspace_name $table_name $snapshot_name
+			/opt/apache-cassandra-3.4/bin/sstableupgrade $keyspace_name $table_name $snapshot_name
 			echo "mkdir -p $node_folder/upgrade/$keyspace_name/$table_name"
 			mkdir -p $node_folder/upgrade/$keyspace_name/$table_name
 			echo "cp /var/cassandra/data/$keyspace_name/$cass_table/snapshots/$snapshot_name/* $node_folder/upgrade/$keyspace_name/$table_name -R"
 			cp /var/cassandra/data/$keyspace_name/$cass_table/snapshots/$snapshot_name/* $node_folder/upgrade/$keyspace_name/$table_name -R
 			echo "sstableloader -d $LISTEN_ADDRESS $node_folder/upgrade/$keyspace_name/$table_name"
-			sstableloader -d $LISTEN_ADDRESS $node_folder/upgrade/$keyspace_name/$table_name
+			/opt/apache-cassandra-3.4/bin/sstableloader -d $LISTEN_ADDRESS $node_folder/upgrade/$keyspace_name/$table_name
 			echo "---"
 		done
 	done

@@ -185,9 +185,12 @@ JVM_OPTS="$JVM_OPTS -javaagent:$CASSANDRA_HOME/lib/jamm-0.3.0.jar"
 # add jolokia java agent
 JVM_OPTS="$JVM_OPTS -javaagent:/opt/jolokia/jolokia-jvm-agent.jar=port=8778,host=$LISTEN_ADDRESS"
 
+#GC configurations
+JVM_OPTS="$JVM_OPTS -XX:+UseG1GC"
+JVM_OPTS="$JVM_OPTS -XX:G1RSetUpdatingPauseTimePercent=5"
 
 # some JVMs will fill up their heap when accessed via JMX, see CASSANDRA-6541
-JVM_OPTS="$JVM_OPTS -XX:+CMSClassUnloadingEnabled"
+# JVM_OPTS="$JVM_OPTS -XX:+CMSClassUnloadingEnabled"
 
 # enable thread priorities, primarily so we can give periodic tasks
 # a lower priority to avoid interfering with client workload
@@ -221,7 +224,7 @@ JVM_OPTS="$JVM_OPTS -Xss256k"
 JVM_OPTS="$JVM_OPTS -XX:StringTableSize=1000003"
 
 # GC tuning options
-JVM_OPTS="$JVM_OPTS -XX:+UseParNewGC"
+# JVM_OPTS="$JVM_OPTS -XX:+UseParNewGC"
 # JVM_OPTS="$JVM_OPTS -XX:+UseConcMarkSweepGC"
 # JVM_OPTS="$JVM_OPTS -XX:+CMSParallelRemarkEnabled"
 JVM_OPTS="$JVM_OPTS -XX:SurvivorRatio=8"
@@ -234,9 +237,9 @@ JVM_OPTS="$JVM_OPTS -XX:CompileCommandFile=$CASSANDRA_CONF/hotspot_compiler"
 # JVM_OPTS="$JVM_OPTS -XX:CMSWaitDuration=10000"
 
 # note: bash evals '1.7.x' as > '1.7' so this is really a >= 1.7 jvm check
-if { [ "$JVM_VERSION" \> "1.7" ] && [ "$JVM_VERSION" \< "1.8.0" ] && [ "$JVM_PATCH_VERSION" -ge "60" ]; } || [ "$JVM_VERSION" \> "1.8" ] ; then
+# if { [ "$JVM_VERSION" \> "1.7" ] && [ "$JVM_VERSION" \< "1.8.0" ] && [ "$JVM_PATCH_VERSION" -ge "60" ]; } || [ "$JVM_VERSION" \> "1.8" ] ; then
   #  JVM_OPTS="$JVM_OPTS -XX:+CMSParallelInitialMarkEnabled -XX:+CMSEdenChunksRecordAlways -XX:CMSWaitDuration=10000"
-fi
+# fi
 
 if [ "$JVM_ARCH" = "64-Bit" ] ; then
     JVM_OPTS="$JVM_OPTS -XX:+UseCondCardMark"
@@ -321,10 +324,6 @@ JVM_OPTS="$JVM_OPTS -XX:-UseBiasedLocking"
 
 JVM_OPTS="$JVM_OPTS -XX:+AlwaysPreTouch"
 
-#GC configurations
-JVM_OPTS="$JVM_OPTS -XX:+UseG1GC"
-JVM_OPTS="$JVM_OPTS -XX:G1RSetUpdatingPauseTimePercent=5"
-
 # Start GC earlier to avoid STW.
 # The default in Hotspot 8u40 is 40%.
 JVM_OPTS="$JVM_OPTS -XX:InitiatingHeapOccupancyPercent=25"
@@ -338,5 +337,3 @@ JVM_OPTS="$JVM_OPTS -XX:+ParallelRefProcEnabled"
 JVM_OPTS="$JVM_OPTS $MX4J_ADDRESS"
 JVM_OPTS="$JVM_OPTS $MX4J_PORT"
 JVM_OPTS="$JVM_OPTS $JVM_EXTRA_OPTS"
-
-chrt --batch 0 --pid $$

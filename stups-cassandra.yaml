@@ -9,10 +9,7 @@ SenzaInfo:
         Default: "4"
     - ImageVersion:
         Description: "Which Image version to use (e.g. 2.1.8-p0)"
-        Default: "1.1-SNAPSHOT"
-    - OpsCenterIp:
-        Description: "Register to Opscenter using Ip address"
-        Default: ""
+        Default: "1.6-SNAPSHOT"
     - ScalyrKey:
         Description: "The API key of Scalyr logging service used by Taupage"
         Default: ""
@@ -27,16 +24,16 @@ SenzaInfo:
         Default: "0"
     - RecoverySnapshot:
         Description: "Timestamp of snapshot to recover from"
-        Default: "2016-02-17:07"
+        Default: "2016-03-14:06"
     - TTL:
         Description: "Lock TTL"
         Default: 30
     - DCSuffix:
         Description: "DC_Suffix in cassandra rackdc file"
-        Default: "DC3"
+        Default: "DC1"
     - ClusterName:
         Description: "Name of the cluster"
-        Default: "RELEASECLUSTER"
+        Default: "OCTOCLUSTER"
 
 SenzaComponents:
 
@@ -45,7 +42,7 @@ SenzaComponents:
 
   - CassandraCluster:
       Type: Senza::TaupageAutoScalingGroup
-      InstanceType: "r3.4xlarge"
+      InstanceType: "i2.2xlarge"
       SecurityGroups:
         - Fn::GetAtt:
           - StupsCassandraSg
@@ -65,15 +62,14 @@ SenzaComponents:
         application_id: "{{Arguments.ApplicationId}}"
         etcd_discovery_domain: "{{Arguments.EtcdDomain}}"
         scalyr_account_key: "{{Arguments.ScalyrKey}}"
-        mint_bucket: "zalando-stups-mint-268094141749-eu-west-1"
-        # http://docs.datastax.com/en/opscenter/5.0/opsc/reference/opscPorts_r.html
+        mint_bucket: ""
+
         ports:
           7000: 7000
           7199: 7199
           8778: 8778
           9042: 9042
           9160: 9160
-          61621: 61621
         volumes:
           raid:
             /dev/md/cassandra:
@@ -86,13 +82,12 @@ SenzaComponents:
             erase_on_boot: false
           /var/cassandra:
             partition: /dev/md/cassandra
-            filesystem: xfs
+            filesystem: ext4
             erase_on_boot: true
 
         environment:
           CLUSTER_NAME: "{{Arguments.ClusterName}}"
           CLUSTER_SIZE: "{{Arguments.ClusterSize}}"
-          OPSCENTER: "{{Arguments.OpsCenterIp}}"
           TTL: "{{Arguments.TTL}}"
           APPLICATION_ID: "{{Arguments.ApplicationId}}"
           BACKUP_BUCKET: "{{Arguments.BackupBucket}}"
@@ -126,10 +121,6 @@ Resources:
       - IpProtocol: tcp #Jolokia Agent
         FromPort: 8778
         ToPort: 8778
-        CidrIp: 0.0.0.0/0
-      - IpProtocol: tcp # Agent receiving traffic from OpsCenter
-        FromPort: 61621
-        ToPort: 61621
         CidrIp: 0.0.0.0/0
       - IpProtocol: tcp # SSH
         FromPort: 22

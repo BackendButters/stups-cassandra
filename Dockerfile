@@ -7,10 +7,8 @@ MAINTAINER Zalando <team-mop@zalando.de>
 EXPOSE 7000 7199 8778 9042 9160 61621
 
 ENV DEBIAN_FRONTEND=noninteractive
-RUN echo "deb http://debian.datastax.com/community stable main" | tee -a /etc/apt/sources.list.d/datastax.community.list
-RUN curl -sL https://debian.datastax.com/debian/repo_key | apt-key add -
 RUN apt-get -y update && apt-get -y -o Dpkg::Options::='--force-confold' --fix-missing dist-upgrade
-RUN apt-get -y install curl python wget jq datastax-agent sysstat python-pip supervisor jemalloc && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+RUN apt-get -y install curl python wget jq sysstat python-pip supervisor && apt-get clean && rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
 # Needed for transferring snapshots
 RUN pip install awscli
@@ -66,15 +64,15 @@ RUN mkdir -p /opt/recovery
 RUN export PATH=/opt/apache-cassandra-3.4/bin:$PATH
 
 # disable swap
-RUN swapoff -a
-RUN sed -i ‘s/^\(.*swap\)/#\1/' /etc/fstab
-RUN echo "vm.swappiness = 1" > /etc/sysctl.d/swappiness.conf
-RUN sysctl -p /etc/sysctl.d/swappiness.conf
+#RUN swapoff -a
+#RUN sed -i ‘s/^\(.*swap\)/#\1/' /etc/fstab
+#RUN echo "vm.swappiness = 1" > /etc/sysctl.d/swappiness.conf
+#RUN sysctl -p /etc/sysctl.d/swappiness.conf
 
-RUN echo 1 > /sys/block/sda/queue/nomerges
-RUN echo 8 > /sys/block/sda/queue/read_ahead_kb
-RUN echo deadline > /sys/block/sda/queue/scheduler
+#RUN echo 1 > /sys/block/sda/queue/nomerges
+#RUN echo 8 > /sys/block/sda/queue/read_ahead_kb
+#RUN echo deadline > /sys/block/sda/queue/scheduler
 
-RUN echo tsc > /sys/devices/system/clocksource/clocksource0/current_clocksource
+#RUN echo tsc > /sys/devices/system/clocksource/clocksource0/current_clocksource
 
 CMD ["/usr/bin/supervisord"]

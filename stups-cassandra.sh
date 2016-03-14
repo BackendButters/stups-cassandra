@@ -132,16 +132,6 @@ done
 echo "Finished bootstrapping node."
 # Add route 53record seed1.${CLUSTER_NAME}.domain.tld ?
 
-if [ -n "$OPSCENTER" ] ;
-then
-    echo "Configuring OpsCenter agent ..."
-    echo "stomp_interface: $OPSCENTER" >> /var/lib/datastax-agent/conf/address.yaml
-    echo "hosts: [\"$LISTEN_ADDRESS\"]" >> /var/lib/datastax-agent/conf/address.yaml
-    echo "cassandra_conf: /opt/cassandra/conf/cassandra.yaml" >> /var/lib/datastax-agent/conf/address.yaml
-    echo "Starting OpsCenter agent in the background ..."
-    service datastax-agent start > /dev/null
-fi
-
 echo "Generating configuration from template ..."
 python -c "import os; print os.path.expandvars(open('/opt/cassandra/conf/cassandra_template.yaml').read())" > /opt/cassandra/conf/cassandra.yaml
 python -c "import os; print os.path.expandvars(open('/opt/cassandra/conf/cassandra-rackdc_template.properties').read())" > /opt/cassandra/conf/cassandra-rackdc.properties

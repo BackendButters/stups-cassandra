@@ -215,7 +215,7 @@ counter_cache_save_period: 7200
 # modify cassandra-env.sh as directed in the file.
 #
 # Defaults to NativeAllocator
-memory_allocator: JEMallocAllocator
+# memory_allocator: JEMallocAllocator
 
 # saved caches
 # If not set, the default directory is $CASSANDRA_HOME/data/saved_caches.
@@ -274,13 +274,13 @@ seed_provider:
 # On the other hand, since writes are almost never IO bound, the ideal
 # number of "concurrent_writes" is dependent on the number of cores in
 # your system; (8 * number_of_cores) is a good rule of thumb.
-concurrent_reads: 16
+concurrent_reads: 32
 concurrent_writes: 128
-concurrent_counter_writes: 16
+concurrent_counter_writes: 32
 
 # For materialized view writes, as there is a read involved, so this should
 # be limited by the less of concurrent reads or concurrent writes.
-concurrent_materialized_view_writes: 16
+concurrent_materialized_view_writes: 32
 
 # Total memory to use for sstable-reading buffers.  Defaults to
 # the smaller of 1/4 of heap or 512MB.
@@ -550,7 +550,7 @@ concurrent_compactors: 8
 # 16 to 32 times the rate you are inserting data is more than sufficient.
 # Setting this to 0 disables throttling. Note that this account for all types
 # of compaction, including validation compaction.
-compaction_throughput_mb_per_sec: 24
+compaction_throughput_mb_per_sec: 32
 
 # Log a warning when compacting partitions larger than this value
 compaction_large_partition_warning_threshold_mb: 100
